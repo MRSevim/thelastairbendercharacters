@@ -147,7 +147,7 @@ input[type="text"] {
   .cards {
     grid-template-columns: 1fr;
   }
-  .card img {
-    object-fit: contain;
+  .input[type="text"] {
+    width: 90%;
   }
 }
