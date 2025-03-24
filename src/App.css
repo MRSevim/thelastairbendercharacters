@@ -147,7 +147,7 @@ input[type="text"] {
   .cards {
     grid-template-columns: 1fr;
   }
-  .input[type="text"] {
+  input[type="text"] {
     width: 90%;
   }
 }
