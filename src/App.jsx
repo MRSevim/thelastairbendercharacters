@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import Header from "./components/Header";
 import Characters from "./components/Characters";
@@ -11,17 +11,18 @@ const App = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [scrolledDown, setScrolledDown] = useState(false);
-  const [page, setPage] = useState(1);
+  const page = useRef(1);
 
   const fetchItems = async () => {
     setIsLoading(true);
+
     const result = await axios(
       `https://last-airbender-api.fly.dev/api/v1/characters`,
       {
         params: {
           name: query ? query : undefined,
           perPage: query ? undefined : 20,
-          page: query ? undefined : page,
+          page: query ? undefined : page.current,
         },
       }
     );
@@ -41,12 +42,14 @@ const App = () => {
 
   useEffect(() => {
     const fetch = async () => {
+      page.current += 1;
       const data = await fetchItems();
       setItems((prev) => [...prev, ...data]);
-      setScrolledDown(false);
     };
-    if (scrolledDown) {
+
+    if (scrolledDown && items.length < 497) {
       fetch();
+      setScrolledDown(false);
     }
   }, [scrolledDown]);
 
@@ -58,7 +61,6 @@ const App = () => {
 
       if (scrolledToBottom) {
         setScrolledDown(true);
-        setPage((prev) => ++prev);
       }
     };
 
