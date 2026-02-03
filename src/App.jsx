@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import axios from "axios";
 import Header from "./components/Header";
 import Characters from "./components/Characters";
@@ -10,57 +10,48 @@ const App = () => {
   const [items, setItems] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [query, setQuery] = useState("");
-  const [scrolledDown, setScrolledDown] = useState(false);
-  const page = useRef(1);
+  const [page, setPage] = useState(1);
+  const requestId = useRef(0); // to prevent stale updates
 
-  const fetchItems = async () => {
+  const fetchItems = useCallback(async () => {
     setIsLoading(true);
 
     const result = await axios(
       `https://last-airbender-api.fly.dev/api/v1/characters`,
       {
         params: {
-          name: query ? query : undefined,
-          perPage: query ? undefined : 20,
-          page: query ? undefined : page.current,
+          name: query,
+          perPage: 20,
+          page,
         },
-      }
+      },
     );
 
     setIsLoading(false);
+
     return result.data;
-  };
+  }, [query, page]);
 
   useEffect(() => {
+    const id = ++requestId.current;
+
     const fetch = async () => {
-      setItems([]);
       const data = await fetchItems();
-      setItems(data);
+      if (id === requestId.current) {
+        setItems((prev) => (page === 1 ? data : [...prev, ...data]));
+      }
     };
     fetch();
-  }, [query]);
+  }, [query, page, fetchItems]);
 
   useEffect(() => {
-    const fetch = async () => {
-      page.current += 1;
-      const data = await fetchItems();
-      setItems((prev) => [...prev, ...data]);
-    };
-
-    if (scrolledDown && items.length < 497) {
-      fetch();
-      setScrolledDown(false);
-    }
-  }, [scrolledDown]);
-
-  useEffect(() => {
-    const onScroll = (e) => {
+    const onScroll = () => {
       const scrolledToBottom =
         window.innerHeight + window.scrollY >=
         document.documentElement.scrollHeight;
 
       if (scrolledToBottom) {
-        setScrolledDown(true);
+        setPage((prev) => prev + 1);
       }
     };
 
@@ -71,17 +62,16 @@ const App = () => {
 
   const queryFunction = (q) => {
     setQuery(q);
+    setPage(1);
+    setItems([]);
   };
 
   return (
     <div className="container">
       <Header />
       <Search onSearch={queryFunction} />
-      <div className="characters-container">
-        {isLoading && !scrolledDown && <Spinner />}
-        <Characters isLoading={isLoading} items={items} />
-        {isLoading && scrolledDown && <Spinner />}
-      </div>
+      <Characters items={items} />
+      {isLoading && <Spinner />}
     </div>
   );
 };
