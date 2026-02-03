@@ -11,7 +11,7 @@ const App = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
-  const requestId = useRef(0); // to prevent stale updates
+  const currentQuery = useRef(""); // to prevent stale updates
 
   const fetchItems = useCallback(async () => {
     setIsLoading(true);
@@ -26,20 +26,16 @@ const App = () => {
         },
       },
     );
-
     setIsLoading(false);
 
     return result.data;
   }, [query, page]);
 
   useEffect(() => {
-    const id = ++requestId.current;
-
     const fetch = async () => {
       const data = await fetchItems();
-      if (id === requestId.current) {
+      if (query === currentQuery.current)
         setItems((prev) => (page === 1 ? data : [...prev, ...data]));
-      }
     };
     fetch();
   }, [query, page, fetchItems]);
@@ -62,6 +58,7 @@ const App = () => {
 
   const queryFunction = (q) => {
     setQuery(q);
+    currentQuery.current = q;
     setPage(1);
     setItems([]);
   };
